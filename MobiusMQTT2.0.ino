@@ -24,12 +24,20 @@
 #include <AntiDelay.h>
 #include "MobiusSerialDecoder.h"
 
-// Create an AntiDelay object with initial 0 millis (run on first execution)
-AntiDelay scanMobius(0);
-//Now that the scan has started on boot, set the timer so re-scan runs every 2 minutes
-float minutes = 0;
+AntiDelay scanMobius(0);          // Create an AntiDelay object with initial 0 millis (run on first execution)
+MobiusDevice deviceBuffer[30];    // Define a device buffer to hold found Mobius devices
+JsonDocument mainJsonDoc;         // JSON Document for the main Serial#, Scenes
+JsonDocument deviceSelectDoc;     // JSON Document to build the select
 
+float minutes = 0;                // set minutes to 0 for continuous scan
 char jsonOutputFlash[1024];
+bool SceneDiscFlag = false;
+bool prevSceneDiscFlag = false;
+
+
+//output variable to serialize the json
+char jsonOutput[1024];
+
 
 // Configuration for wifi and mqtt
 EspMQTTClient mqttClient(
@@ -73,35 +81,12 @@ char* jsonSwitchDiscovery =  "{\
       \"sw_version\": \"2024.05.03\"\
          }}";
 
-char* jsonTextDiscovery =  "{\
-    \"name\":\"Scenes JSON\",\
-    \"command_topic\":\"homeassistant/text/mobiusBridge/set\",\
-    \"state_topic\":\"homeassistant/text/mobiusBridge/state\",\
-    \"unique_id\":\"mobius01BLEBdge\",\
-    \"device\":{\
-      \"identifiers\":[\
-        \"mobridge01ad\"\
-      ],\
-      \"name\":\"Mobius\",\
-      \"manufacturer\": \"Team Down Under\",\
-      \"model\": \"Mobius BLE Bridge\",\
-      \"sw_version\": \"2024.05.03\"\
-         }}";
-
-bool SceneDiscFlag = false;
-bool prevSceneDiscFlag = false;
-// Define a device buffer to hold found Mobius devices
-MobiusDevice deviceBuffer[30];
-//output variable to serialize the json
-char jsonOutput[1024];
-JsonDocument mainJsonDoc;
-JsonDocument deviceSelectDoc;
+char* jsonTextDiscovery =  "{\"name\":\"Scenes JSON\",\"command_topic\":\"homeassistant/text/mobiusBridge/set\",\"state_topic\":\"homeassistant/text/mobiusBridge/state\",\"unique_id\":\"mobius01BLEBdge\",\
+\"device\":{\"identifiers\":[\"mobridge01ad\"],\"name\":\"Mobius\",\"manufacturer\": \"Team Down Under\",\"model\": \"Mobius BLE Bridge\",\"sw_version\": \"2024.05.03\"}}";
 
 // wifi and mqtt connection established
 void onConnectionEstablished()
 {
-//  Serial.println("Connected to MQTT Broker :)");
-
   // Set keepalive (default is 15sec)
   mqttClient.setKeepAlive(120);
 
@@ -135,17 +120,18 @@ void mobiusSetScene(const String& topic, const String& message) {
   Serial.println(serialNumber1);
 
   Serial.println("************************************************************");
- 
 }
-
 
 void mobiusSceneSwitch(const String& sceneDiscovery) {
   if (sceneDiscovery.length() > 0) {
     if (sceneDiscovery == "ON") {
       SceneDiscFlag = true;
-//      Serial.printf("INFO: Start Scene Discovery");
+
+/*
       unsigned long startMillis = millis();
       while (1000 > (millis() - startMillis)) {}
+*/
+      waitFunction(1000);
 
       mqttClient.publish("homeassistant/switch/mobiusBridge/state", "ON", true);
     } else {
@@ -153,27 +139,23 @@ void mobiusSceneSwitch(const String& sceneDiscovery) {
 
       //checking the previous state
       prevSceneDiscFlag = true;
-//      Serial.printf("INFO: Disable Scene Discovery");
+
+      waitFunction(1000);
+/*
       unsigned long startMillis = millis();
       while (1000 > (millis() - startMillis)) {}
-
+*/
       mqttClient.publish("homeassistant/switch/mobiusBridge/state", "OFF", true);
     }
     //reset timer
     scanMobius.setInterval(0);
     scanMobius.reset();
-
   }
 };
 
-//To update the Scenes JSON send from HA
+//To update the Scenes JSON with the one sent from HA
 void onJsonStoreSet(const String& scenesJSON){
-//  Serial.println("JSON Message Received: ");
-  //Serial.println(scenesJSON);
-
   if (scenesJSON.length() > 0) {
-//    Serial.printf("INFO: Got JSON from HA, updating it in the bridge");
-
     strcpy(jsonOutput, scenesJSON.c_str());
 
     DeserializationError error = deserializeJson(mainJsonDoc, jsonOutput);
@@ -183,9 +165,11 @@ void onJsonStoreSet(const String& scenesJSON){
       Serial.println(error.c_str());
     }
 
+    waitFunction(1000);
+/*
     unsigned long startMillis = millis();
     while (1000 > (millis() - startMillis)) {}
-
+*/
     //Publish it back with retain
     char jsonOutputHA[1024];
     serializeJson(mainJsonDoc, jsonOutputHA);
@@ -211,25 +195,26 @@ void setup() {
   // Increase default packet size for HA mqtt json messages
   mqttClient.setMaxPacketSize(10000);
 
-  //trying to get the JSON on 1st execution
-  // Looks like this does not work, need to validate next steps on writing to flash
-//  mqttClient.subscribe("homeassistant/text/mobiusBridge/state", onJsonStoreSet,true);
-
   // Initialize the library with a useful event listener
   MobiusDevice::init(new ArduinoSerialDeviceEventListener());
 
 //Publish basic MQTT controls once after boot
-//  Serial.println(jsonSwitchDiscovery);
   mqttClient.publish("homeassistant/switch/mobiusBridge/config", jsonSwitchDiscovery);
+
   // delaying without sleeping
+  waitFunction(1000);
+/*
   unsigned long startMillis = millis();
   while (1000 > (millis() - startMillis)) {}
+*/
   mqttClient.publish("homeassistant/text/mobiusBridge/config", jsonTextDiscovery);
 
   // delaying without sleeping
+  waitFunction(1000);
+  /*
   startMillis = millis();
   while (1000 > (millis() - startMillis)) {}
-
+*/
   mqttClient.publish("homeassistant/switch/mobiusBridge/state", "OFF");
 
   char jsonOutputHA[1024];
@@ -237,9 +222,11 @@ void setup() {
     serializeJson(mainJsonDoc, jsonOutputHA);
 
   // delaying without sleeping
+  waitFunction(1000);
+/*
   startMillis = millis();
   while (1000 > (millis() - startMillis)) {}
-  
+*/  
   if (sizeof(jsonOutputHA) > 0)
     mqttClient.publish("homeassistant/text/mobiusBridge/state", jsonOutputHA, true);
   else
@@ -371,11 +358,6 @@ void loop() {
         
         sprintf(deviceSelectDiscoveryTopic, "homeassistant/select/mobius/%s/config", serialNumber);
         
-//        Serial.printf("INFO: Device Select Discovery Topic: %s\n", deviceSelectDiscoveryTopic);
-//        Serial.printf("INFO: SERIAL NUMBER BEFORE publish %s\n", serialNumber);
-        //mqttClient.publish(deviceSelectDiscoveryTopic, jsonSelect);
-//        Serial.printf("INFO: SERIAL NUMBER AFTER %s\n", serialNumber);
-
         // Get current scene
 //        Serial.printf("INFO: Device Topic: %s\n", deviceTopic);
         uint16_t sceneId = mobiusBLEdevice.getCurrentScene();
@@ -486,4 +468,9 @@ void loop() {
     }
     Serial.println(jsonOutput);  
   }
+}
+
+void waitFunction(int intTimer){
+  unsigned long startMillis = millis();
+  while (intTimer > (millis() - startMillis)) {}  
 }
