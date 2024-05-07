@@ -14,6 +14,9 @@
  * This example code is released into the public domain.
  */
 
+// Uncoment below to set scene auto discover to ON on boot
+#define DISCOVER_ON             
+
 #include <esp_log.h>
 #include <ESP32_MobiusBLE.h>
 #include "ArduinoSerialDeviceEventListener.h"
@@ -31,12 +34,19 @@ JsonDocument deviceSelectDoc;     // JSON Document to build the select
 
 float minutes = 0;                // set minutes to 0 for continuous scan
 char jsonOutputFlash[1024];
-bool SceneDiscFlag = false;
 bool prevSceneDiscFlag = false;
-
-
 //output variable to serialize the json
 char jsonOutput[1024];
+
+
+#if defined(DISCOVER_ON)
+  char discoverSwitch[4] = "ON";   
+  bool SceneDiscFlag = true;
+#else
+  char discoverSwitch[4] = "OFF";   // Set default state for the scene discovery switch
+  bool SceneDiscFlag = false;
+#endif
+
 
 
 // Configuration for wifi and mqtt
@@ -215,7 +225,7 @@ void setup() {
   startMillis = millis();
   while (1000 > (millis() - startMillis)) {}
 */
-  mqttClient.publish("homeassistant/switch/mobiusBridge/state", "OFF");
+  mqttClient.publish("homeassistant/switch/mobiusBridge/state", discoverSwitch);
 
   char jsonOutputHA[1024];
   if (!mainJsonDoc.isNull())
