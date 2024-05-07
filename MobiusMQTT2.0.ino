@@ -34,7 +34,6 @@ JsonDocument deviceSelectDoc;     // JSON Document to build the select
 
 float minutes = 0;                // set minutes to 0 for continuous scan
 char jsonOutputFlash[1024];
-bool prevSceneDiscFlag = false;
 //output variable to serialize the json
 char jsonOutput[1024];
 
@@ -146,9 +145,6 @@ void mobiusSceneSwitch(const String& sceneDiscovery) {
       mqttClient.publish("homeassistant/switch/mobiusBridge/state", "ON", true);
     } else {
       SceneDiscFlag = false;
-
-      //checking the previous state
-      prevSceneDiscFlag = true;
 
       waitFunction(1000);
 /*
