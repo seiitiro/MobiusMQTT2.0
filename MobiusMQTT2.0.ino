@@ -240,7 +240,6 @@ void setup() {
 
 }
 
-bool runBasicConfig = true;
 /*!
  * Main Loop method
  */
@@ -290,7 +289,7 @@ void loop() {
         // Substitute serialNumber into jsonDiscoveryDevice
         // Substitutions in order: name, unique_id, "icon", discovery_component (e.g. sensor ), sensor_topic (e.g. scene), serialNumber, "sensorType"
         char json[512];
-        sprintf(json, jsonDiscoveryDevice, "Current Scene", serialNumber, "mdi:pump", "sensor", serialNumber, "scene", deviceAddress, serialNumber, modelName, Manufa, serialNumber, fwRev);
+        sprintf(json, jsonDiscoveryDevice, "Current Scene", serialNumber, "mdi:pump", "sensor", serialNumber, "scene", serialNumber, serialNumber, modelName, Manufa, serialNumber, fwRev);
 //        Serial.println(json);
         //sprintf(json, jsonDiscoveryDevice, serialNumber, serialNumber, serialNumber, deviceAddress, serialNumber);
 //        Serial.printf("INFO: Device discovery message:%s\n", json);
