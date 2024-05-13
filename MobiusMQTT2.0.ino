@@ -15,7 +15,7 @@
  */
 
 // Uncoment below to set scene auto discover to ON on boot
-#define DISCOVER_ON             
+//#define DISCOVER_ON             
 
 #include <esp_log.h>
 #include <ESP32_MobiusBLE.h>
@@ -349,7 +349,7 @@ void loop() {
         }
 
         JsonObject deviceJson = deviceSelectDoc["device"].to<JsonObject>();
-        deviceJson["identifiers"][0] = deviceAddress;
+        deviceJson["identifiers"][0] = serialNumber;
         deviceJson["name"] = serialNumber;
 
         char jsonSelect[512];
