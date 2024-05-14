@@ -117,6 +117,11 @@ void onConnectionEstablished()
 
 }
 
+/********************************************************************************
+ *
+ *  Retrieve the retained Scenes JSON file from MQTT Broker, ideally just after boot.
+ *
+ ********************************************************************************/
 void mobiusGetScene(const String& topic, const String& message) {
   if (message.length() > 0) {
 
@@ -169,7 +174,7 @@ void mobiusSceneSwitch(const String& sceneDiscovery) {
   if (sceneDiscovery.length() > 0) {
     if (sceneDiscovery == "ON") {
       SceneDiscFlag = true;
-
+      storedScenes = true;  //If triggering scene discovery manually, set storedScenes to true to allow logic to run and not wait for timeout
 /*
       unsigned long startMillis = millis();
       while (1000 > (millis() - startMillis)) {}
