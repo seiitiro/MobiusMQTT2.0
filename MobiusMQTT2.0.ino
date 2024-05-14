@@ -124,7 +124,6 @@ void onConnectionEstablished()
  ********************************************************************************/
 void mobiusGetScene(const String& topic, const String& message) {
   if (message.length() > 0) {
-
     strcpy(jsonOutput, message.c_str());
 
     DeserializationError error = deserializeJson(mainJsonDoc, jsonOutput);
@@ -134,6 +133,12 @@ void mobiusGetScene(const String& topic, const String& message) {
       Serial.println(error.c_str());
     } else {
       storedScenes = true;
+      char jsonOutputHA[1024];
+      if (!mainJsonDoc.isNull()){
+        serializeJson(mainJsonDoc, jsonOutputHA);
+        mqttClient.publish("homeassistant/text/mobiusBridge/state", jsonOutputHA, true);
+      }
+      
 
       Serial.println("************************************************************");
       Serial.println("************************************************************");
